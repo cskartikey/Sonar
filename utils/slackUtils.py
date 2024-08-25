@@ -1,15 +1,7 @@
-from slack_bolt.async_app import AsyncApp
 import asyncio
-from math import ceil
-from dotenv import load_dotenv
-import os
 import json
-
-load_dotenv()
-app = AsyncApp(token=os.getenv("SLACK_USER_TOKEN"))
-appBot = AsyncApp(token=os.getenv("SLACK_BOT_TOKEN"))
-
-ALLOWED_CHANNEL_ID = os.getenv("ALLOWED_CHANNEL_ID")
+from math import ceil
+from config import appBot
 
 
 def formatSlackMessage(

@@ -1,8 +1,6 @@
-from utils.elasticSearch import es
+from config import es, ES_INDEX
 from datetime import datetime, timezone
 import os
-
-ES_INDEX = os.getenv("ES_INDEX")
 
 
 async def indexLogs(logs):

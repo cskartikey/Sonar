@@ -1,24 +1,9 @@
-from elasticsearch import AsyncElasticsearch
-import os
-
-# Initialize Elasticsearch client
-es = AsyncElasticsearch(
-    hosts=[
-        {
-            "host": os.getenv("ES_HOST"),
-            "port": int(os.getenv("ES_PORT")),
-            "scheme": "https",
-        }
-    ],
-    basic_auth=(os.getenv("ES_USER"), os.getenv("ES_PASS")),
-    verify_certs=False,
-    ssl_show_warn=False,
-)
+from config import ES_INDEX, es
 
 
 async def createIndex():
     await es.options(ignore_status=[400]).indices.create(
-        index=os.getenv("ES_INDEX"),
+        index=ES_INDEX,
         body={
             "mappings": {
                 "properties": {
@@ -49,7 +34,7 @@ async def fetchDataFromEs(userId=None, ipAddress=None, page=1, size=10):
 
         start = (page - 1) * size
         response = await es.search(
-            index=os.getenv("ES_INDEX"),
+            index=ES_INDEX,
             body={
                 "query": query,
                 "sort": [{"date_last": {"order": "desc"}}],

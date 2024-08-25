@@ -1,4 +1,4 @@
-from utils.slackUtils import app
+from config import app
 
 
 async def fetchLogs(cursor=None, limit=500, before=None):
