@@ -1,10 +1,15 @@
 from slack_bolt.async_app import AsyncApp
+import asyncio
 from math import ceil
+from dotenv import load_dotenv
 import os
 import json
 
+load_dotenv()
 app = AsyncApp(token=os.getenv("SLACK_USER_TOKEN"))
 appBot = AsyncApp(token=os.getenv("SLACK_BOT_TOKEN"))
+
+ALLOWED_CHANNEL_ID = os.getenv("ALLOWED_CHANNEL_ID")
 
 
 def formatSlackMessage(
@@ -123,3 +128,68 @@ def formatSlackMessage(
         )
 
     return blocks
+
+
+# Security Related functions. Have to implment these :(
+
+
+async def checkBotChannel():
+    try:
+        channels = []
+        cursor = None
+        while True:
+            response = await appBot.client.conversations_list(
+                types="public_channel,private_channel", limit=1000, cursor=cursor
+            )
+            channels.extend(response["channels"])
+            cursor = response.get("response_metadata", {}).get("next_cursor")
+            if not cursor:
+                break
+            await asyncio.sleep(2)
+
+        # print(f"Total channels fetched: {len(channels)}")
+
+        botChannels = []
+        for channel in channels:
+            if channel.get("is_member"):
+                botChannels.append(
+                    {
+                        "id": channel["id"],
+                        "name": channel.get("name"),
+                        "creator": channel.get("creator"),
+                    }
+                )
+
+        # print(f"🚨Bot is in channels: {botChannels}")
+
+        for channel in botChannels:
+            if channel["id"] != ALLOWED_CHANNEL_ID:
+                await appBot.client.conversations_leave(channel=channel["id"])
+                await appBot.client.chat_postMessage(
+                    channel=ALLOWED_CHANNEL_ID,
+                    text=f"🚨 The bot has been removed from a non-allowed channel (ID: {channel['id']}, Name: {channel['name']}, Creator: {channel['creator']}).",
+                )
+
+    except Exception as e:
+        print(f"⚠️ Error checking bot channels: {e}")
+
+
+async def isUserAuthorized(userID):
+    try:
+        userInfo = await appBot.client.users_info(user=userID)
+        isAdmin = userInfo["user"].get("is_admin", False)
+        isOwner = userInfo["user"].get("is_owner", False)
+        return userID is isAdmin or isOwner
+    except Exception as e:
+        print(f"⚠️ Error checking user authorization: {e}")
+        return False
+
+
+# async def report_bot_added(user_id, channelID):
+#     try:
+#         await appBot.client.chat_postMessage(
+#             channel=ALLOWED_CHANNEL_`ID,
+#             text=f"🚨 The bot was added to an unauthorized channel (ID: {channelID}) by <@{user_id}>."
+#         )
+#     except Exception as e:
+#         print(f"⚠️ Error reporting bot addition: {e.response['error']}")

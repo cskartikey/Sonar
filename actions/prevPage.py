@@ -5,6 +5,9 @@ from utils.elasticSearch import fetchDataFromEs
 
 async def prevPageAction(ack, body, respond):
     await ack()
+    if not await isUserAuthorized(body["user_id"]):
+        await respond(text="🚫 You don't have permission to perform this action.")
+        return
     metadata = json.loads(body["actions"][0]["value"])
     page = metadata.get("page")
     userId = metadata.get("user_id")

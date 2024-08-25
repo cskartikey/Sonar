@@ -1,9 +1,13 @@
-from utils.slackUtils import formatSlackMessage
+from utils.slackUtils import formatSlackMessage, isUserAuthorized
 from utils.elasticSearch import fetchDataFromEs
 
 
 async def fetchDataCommand(client, ack, body, respond):
     await ack()
+    if not await isUserAuthorized(body["user_id"]):
+        await respond(text="🚫 You don't have permission to perform this action.")
+        return
+
     text = body["text"].split()
     userId = text[0] if len(text) > 0 else None
     ipAddress = text[1] if len(text) > 1 else None
