@@ -1,6 +1,6 @@
 # Sonar
 
-Since Hack Club's Slack is not on Enterprise Grid, certain admin.* API endpoints are not available, making audit logs and moderation more challenging. **Sonar** leverages the available endpoints to improve moderation capabilities.
+Since Hack Club's Slack is not on Enterprise Grid, admin.* API endpoints are not available, making audit logs and moderation more challenging. **Sonar** leverages the available endpoints to improve moderation capabilities.
 
 ## Running it Locally
 
