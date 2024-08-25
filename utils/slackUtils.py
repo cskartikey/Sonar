@@ -171,7 +171,7 @@ async def isUserAuthorized(userID):
         userInfo = await appBot.client.users_info(user=userID)
         isAdmin = userInfo["user"].get("is_admin", False)
         isOwner = userInfo["user"].get("is_owner", False)
-        return userID is isAdmin or isOwner
+        return isAdmin or isOwner
     except Exception as e:
         print(f"⚠️ Error checking user authorization: {e}")
         return False
