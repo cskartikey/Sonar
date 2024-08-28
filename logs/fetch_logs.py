@@ -1,7 +1,7 @@
 from config import app
 
 
-async def fetchLogs(cursor=None, limit=500, before=None):
+async def fetch_logs(cursor=None, limit=500, before=None):
     params = {"limit": limit}
     if cursor:
         params["cursor"] = cursor

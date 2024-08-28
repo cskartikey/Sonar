@@ -1,16 +1,16 @@
 import asyncio
 import json
 from math import ceil
-from config import appBot
+from config import appBot, ALLOWED_CHANNEL_ID
 
 
-def formatSlackMessage(
-    data, total, page, size=10, headerMessage="", userId=None, ipAddress=None
+def format_slack_message(
+    data, total, page, size=10, header_message="", user_id=None, ip_address=None
 ):
     blocks = []
-    if headerMessage:
+    if header_message:
         blocks.append(
-            {"type": "header", "text": {"type": "plain_text", "text": headerMessage}}
+            {"type": "header", "text": {"type": "plain_text", "text": header_message}}
         )
 
     if "error" in data:
@@ -21,16 +21,16 @@ def formatSlackMessage(
             }
         )
     elif data:
-        totalPages = ceil(total / size)
+        total_pages = ceil(total / size)
         blocks.append(
             {
                 "type": "section",
-                "text": {"type": "mrkdwn", "text": f"Page {page}/{totalPages}"},
+                "text": {"type": "mrkdwn", "text": f"Page {page}/{total_pages}"},
             }
         )
 
-        startIndex = (page - 1) * size + 1
-        for index, doc in enumerate(data, start=startIndex):
+        start_index = (page - 1) * size + 1
+        for index, doc in enumerate(data, start=start_index):
             source = doc["_source"]
             blocks.append(
                 {
@@ -75,9 +75,9 @@ def formatSlackMessage(
                     "value": json.dumps(
                         {
                             "page": page - 1,
-                            "user_id": userId,
-                            "ip_address": ipAddress,
-                            "header_message": headerMessage,
+                            "user_id": user_id,
+                            "ip_address": ip_address,
+                            "header_message": header_message,
                         }
                     ),
                 }
@@ -91,9 +91,9 @@ def formatSlackMessage(
                     "value": json.dumps(
                         {
                             "page": page + 1,
-                            "user_id": userId,
-                            "ip_address": ipAddress,
-                            "header_message": headerMessage,
+                            "user_id": user_id,
+                            "ip_address": ip_address,
+                            "header_message": header_message,
                         }
                     ),
                 }
@@ -125,7 +125,7 @@ def formatSlackMessage(
 # Security Related functions. Have to implment these :(
 
 
-async def checkBotChannel():
+async def check_bot_channel():
     try:
         channels = []
         cursor = None
@@ -141,10 +141,10 @@ async def checkBotChannel():
 
         # print(f"Total channels fetched: {len(channels)}")
 
-        botChannels = []
+        bot_channels = []
         for channel in channels:
             if channel.get("is_member"):
-                botChannels.append(
+                bot_channels.append(
                     {
                         "id": channel["id"],
                         "name": channel.get("name"),
@@ -152,9 +152,9 @@ async def checkBotChannel():
                     }
                 )
 
-        # print(f"🚨Bot is in channels: {botChannels}")
+        # print(f"🚨Bot is in channels: {bot_channels}")
 
-        for channel in botChannels:
+        for channel in bot_channels:
             if channel["id"] != ALLOWED_CHANNEL_ID:
                 await appBot.client.conversations_leave(channel=channel["id"])
                 await appBot.client.chat_postMessage(
@@ -166,12 +166,12 @@ async def checkBotChannel():
         print(f"⚠️ Error checking bot channels: {e}")
 
 
-async def isUserAuthorized(userID):
+async def is_user_authorized(user_id):
     try:
-        userInfo = await appBot.client.users_info(user=userID)
-        isAdmin = userInfo["user"].get("is_admin", False)
-        isOwner = userInfo["user"].get("is_owner", False)
-        return isAdmin or isOwner
+        user_info = await appBot.client.users_info(user=user_id)
+        is_admin = user_info["user"].get("is_admin", False)
+        is_owner = user_info["user"].get("is_owner", False)
+        return is_admin or is_owner
     except Exception as e:
         print(f"⚠️ Error checking user authorization: {e}")
         return False

@@ -1,18 +1,17 @@
 from config import es, ES_INDEX
 from datetime import datetime, timezone
-import os
 
 
-async def indexLogs(logs):
+async def index_logs(logs):
     try:
         for log in logs:
-            docId = f"{log['user_id']}_{log['date_last']}"
-            if not await es.exists(index=ES_INDEX, id=docId):
-                ipAddress = log.get("ip") or None
+            doc_id = f"{log['user_id']}_{log['date_last']}"
+            if not await es.exists(index=ES_INDEX, id=doc_id):
+                ip_address = log.get("ip") or None
                 action = {
                     "_op_type": "index",
                     "_index": ES_INDEX,
-                    "_id": docId,
+                    "_id": doc_id,
                     "_source": {
                         "user_id": log["user_id"],
                         "username": log["username"],
@@ -23,16 +22,16 @@ async def indexLogs(logs):
                             log["date_last"], tz=timezone.utc
                         ),
                         "count": log["count"],
-                        "ip": ipAddress,
+                        "ip": ip_address,
                         "user_agent": log["user_agent"],
                         "isp": log["isp"],
                         "country": log["country"],
                         "region": log["region"],
                     },
                 }
-                await es.index(index=ES_INDEX, id=docId, document=action["_source"])
-                print(f"📥 Indexed document {docId}.")
+                await es.index(index=ES_INDEX, id=doc_id, document=action["_source"])
+                print(f"📥 Indexed document {doc_id}.")
             else:
-                print(f"📜 Document {docId} already exists. Skipping.")
+                print(f"📜 Document {doc_id} already exists. Skipping.")
     except Exception as e:
         print(f"⚠️ Error indexing logs: {e}")

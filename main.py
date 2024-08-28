@@ -1,27 +1,27 @@
 # main.py
 import asyncio
-from config import appBot, SLACK_APP_TOKEN, ALLOWED_CHANNEL_ID
-from commands.fetchData import fetchDataCommand
-from actions.loadMore import loadMoreAction
-from actions.prevPage import prevPageAction
-from logs.datafetcher import fetchHistoricalData, fetchIncrementalData
-from utils.elasticSearch import createIndex
-from utils.slackUtils import checkBotChannel
+from config import appBot, SLACK_APP_TOKEN
+from commands.fetch_data import fetch_data_command
+from actions.load_more import load_more_action
+from actions.prev_page import prev_page_action
+from logs.data_fetcher import fetch_historical_data, fetch_incremental_data
+from utils.elastic_search import create_index
+from utils.slack_utils import check_bot_channel
 from slack_bolt.adapter.socket_mode.async_handler import AsyncSocketModeHandler
 
-appBot.command("/fetch_data")(fetchDataCommand)
-appBot.action("load_more")(loadMoreAction)
-appBot.action("prev_page")(prevPageAction)
+appBot.command("/fetch_data")(fetch_data_command)
+appBot.action("load_more")(load_more_action)
+appBot.action("prev_page")(prev_page_action)
 
 
 async def main():
-    await createIndex()
+    await create_index()
     handler = AsyncSocketModeHandler(appBot, SLACK_APP_TOKEN)
-    handlerTask = asyncio.create_task(handler.start_async())
-    # historicalFetchTask = asyncio.create_task(fetchHistoricalData())
-    # incrementalFetchTask = asyncio.create_task(fetchIncrementalData())
-    await checkBotChannel()
-    await asyncio.gather(handlerTask)
+    handler_task = asyncio.create_task(handler.start_async())
+    historical_fetch_task = asyncio.create_task(fetch_historical_data())
+    incremental_fetch_task = asyncio.create_task(fetch_incremental_data())
+    await check_bot_channel()
+    await asyncio.gather(handler_task, historical_fetch_task, incremental_fetch_task)
 
 
 if __name__ == "__main__":

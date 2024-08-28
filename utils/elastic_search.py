@@ -1,7 +1,7 @@
 from config import ES_INDEX, es
 
 
-async def createIndex():
+async def create_index():
     await es.options(ignore_status=[400]).indices.create(
         index=ES_INDEX,
         body={
@@ -24,13 +24,13 @@ async def createIndex():
     print("🗂️ Index created or already exists.")
 
 
-async def fetchDataFromEs(userId=None, ipAddress=None, page=1, size=10):
+async def standard_es_query(user_id=None, ip_address=None, page=1, size=10):
     try:
         query = {"bool": {"must": []}}
-        if userId:
-            query["bool"]["must"].append({"term": {"user_id": userId}})
-        if ipAddress:
-            query["bool"]["must"].append({"term": {"ip": ipAddress}})
+        if user_id:
+            query["bool"]["must"].append({"term": {"user_id": user_id}})
+        if ip_address:
+            query["bool"]["must"].append({"term": {"ip": ip_address}})
 
         start = (page - 1) * size
         response = await es.search(
