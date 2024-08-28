@@ -4,10 +4,23 @@ from math import ceil
 from config import appBot, ALLOWED_CHANNEL_ID
 
 
+def create_field(text, value):
+    return {"type": "mrkdwn", "text": f"*{text}*\n{value}"}
+
+
+def create_fields(index, source, fields_list):
+    fields = [
+        create_field(f"#{index}. {label}", source.get(key, "N/A"))
+        for label, key in fields_list
+    ]
+    return fields
+
+
 def format_slack_message(
     data, total, page, size=10, header_message="", user_id=None, ip_address=None
 ):
     blocks = []
+
     if header_message:
         blocks.append(
             {"type": "header", "text": {"type": "plain_text", "text": header_message}}
@@ -29,40 +42,40 @@ def format_slack_message(
             }
         )
 
-        start_index = (page - 1) * size + 1
-        for index, doc in enumerate(data, start=start_index):
-            source = doc["_source"]
-            blocks.append(
-                {
-                    "type": "section",
-                    "fields": [
-                        {
-                            "type": "mrkdwn",
-                            "text": f"*#{index}. User ID:*\n{source['user_id']}",
-                        },
-                        {
-                            "type": "mrkdwn",
-                            "text": f"*Username:*\n{source['username']}",
-                        },
-                        {
-                            "type": "mrkdwn",
-                            "text": f"*First Login:*\n{source['date_first']}",
-                        },
-                        {
-                            "type": "mrkdwn",
-                            "text": f"*Last Login:*\n{source['date_last']}",
-                        },
-                        {"type": "mrkdwn", "text": f"*IP Address:*\n{source['ip']}"},
-                        {
-                            "type": "mrkdwn",
-                            "text": f"*User Agent:*\n{source['user_agent']}",
-                        },
-                        {"type": "mrkdwn", "text": f"*ISP:*\n{source['isp']}"},
-                        {"type": "mrkdwn", "text": f"*Country:*\n{source['country']}"},
-                        {"type": "mrkdwn", "text": f"*Region:*\n{source['region']}"},
-                    ],
-                }
-            )
+        start_ondex = (page - 1) * size + 1
+        field_mappings = {
+            "🔍 Standard Search Results": [
+                ("User ID:", "user_id"),
+                ("Username:", "username"),
+                ("First Login:", "date_first"),
+                ("Last Login:", "date_last"),
+                ("IP Address:", "ip"),
+                ("User Agent:", "user_agent"),
+                ("ISP:", "isp"),
+                ("Country:", "country"),
+                ("Region:", "region"),
+            ],
+            "👤 Unique User IDs for IP": [("User ID:", "user_id")],
+            "🌐 Unique IPs for User ID": [("IP Address:", "ip")],
+            "🗓️ Date Range Search Results": [
+                ("User ID:", "user_id"),
+                ("Username:", "username"),
+                ("First Login:", "date_first"),
+                ("Last Login:", "date_last"),
+                ("IP Address:", "ip"),
+                ("User Agent:", "user_agent"),
+                ("ISP:", "isp"),
+                ("Country:", "country"),
+                ("Region:", "region"),
+            ],
+        }
+
+        for index, doc in enumerate(data, start=start_ondex):
+            source = doc["_source"] if "_source" in doc else doc
+            fields_list = field_mappings.get(header_message, [])
+            fields = create_fields(index, source, fields_list)
+
+            blocks.append({"type": "section", "fields": fields})
             blocks.append({"type": "divider"})
 
         buttons = []
@@ -171,7 +184,7 @@ async def is_user_authorized(user_id):
         user_info = await appBot.client.users_info(user=user_id)
         is_admin = user_info["user"].get("is_admin", False)
         is_owner = user_info["user"].get("is_owner", False)
-        return is_admin or is_owner
+        return is_owner or is_admin
     except Exception as e:
         print(f"⚠️ Error checking user authorization: {e}")
         return False

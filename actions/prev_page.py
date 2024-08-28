@@ -1,9 +1,9 @@
 import json
 from utils.slack_utils import format_slack_message, is_user_authorized
-from utils.elastic_search import standard_es_query
+from utils.elastic_search import standard_search
 
 
-async def prev_page_action(ack, body, respond):
+async def prev_page(ack, body, respond):
     await ack()
     if not await is_user_authorized(body["user"]["id"]):
         await respond(text="🚫 You don't have permission to perform this action.")
@@ -15,7 +15,7 @@ async def prev_page_action(ack, body, respond):
     header_message = metadata.get("header_message")
 
     try:
-        data, total = await standard_es_query(
+        data, total = await standard_search(
             user_id=user_id, ip_address=ip_address, page=page
         )
         message_blocks = format_slack_message(
