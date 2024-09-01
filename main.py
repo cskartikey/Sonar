@@ -1,6 +1,6 @@
 import asyncio
 import multiprocessing
-from config import app
+from config import app, PORT
 from commands.fetch_data import fetch_data
 from actions.load_more import load_more
 from actions.prev_page import prev_page
@@ -27,7 +27,7 @@ def run_data_fetcher():
 
 
 def run_slack_app():
-    app.start(3000)
+    app.start(PORT)
 
 
 if __name__ == "__main__":
