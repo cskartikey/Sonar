@@ -15,8 +15,24 @@ ES_PORT = int(os.getenv("ES_PORT"))
 ES_INDEX = os.getenv("ES_INDEX")
 ES_USER = os.getenv("ES_USER")
 ES_PASS = os.getenv("ES_PASS")
+ES_API_KEY = os.getenv("ES_API_KEY")
 
-es = AsyncElasticsearch(
+# Development Elasticsearch connection
+# es_dev = AsyncElasticsearch(
+#     hosts=[
+#         {
+#             "host": ES_HOST,
+#             "port": ES_PORT,
+#             "scheme": "https",
+#         }
+#     ],
+#     basic_auth=(ES_USER, ES_PASS),
+#     verify_certs=False,
+#     ssl_show_warn=False,
+# )
+
+# Production Elasticsearch connection
+es_prod = AsyncElasticsearch(
     hosts=[
         {
             "host": ES_HOST,
@@ -24,10 +40,12 @@ es = AsyncElasticsearch(
             "scheme": "https",
         }
     ],
-    basic_auth=(ES_USER, ES_PASS),
-    verify_certs=False,
-    ssl_show_warn=False,
+    api_key=ES_API_KEY,
+    verify_certs=True,
 )
+
+# Use es_prod for production, es_dev for development
+es = es_prod
 
 app = AsyncApp(token=SLACK_USER_TOKEN)
 appBot = AsyncApp(token=SLACK_BOT_TOKEN)
