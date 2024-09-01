@@ -1,10 +1,12 @@
+from typing import Dict, Any
 from utils.slack_utils import is_user_authorized
 from slack_bolt import Ack, BoltContext
 from slack_sdk import WebClient
-from slack_sdk.models.views import View
 
 
-async def fetch_data(client: WebClient, ack: Ack, body, context: BoltContext):
+async def fetch_data(
+    client: WebClient, ack: Ack, body: Dict[str, Any], context: BoltContext
+) -> None:
     await ack()
 
     if not await is_user_authorized(body["user_id"]):
@@ -15,7 +17,7 @@ async def fetch_data(client: WebClient, ack: Ack, body, context: BoltContext):
         )
         return
 
-    modal_view = {
+    modal_view: Dict[str, Any] = {
         "type": "modal",
         "callback_id": "search_modal",
         "title": {"type": "plain_text", "text": "🧭 Sonar"},
@@ -44,16 +46,16 @@ async def fetch_data(client: WebClient, ack: Ack, body, context: BoltContext):
                         {
                             "text": {
                                 "type": "plain_text",
-                                "text": "Filter Unique Users by IP",
+                                "text": "Find Unique IPs by User",
                             },
-                            "value": "unique_user_for_ip",
+                            "value": "unique_ip_for_user",
                         },
                         {
                             "text": {
                                 "type": "plain_text",
-                                "text": "Find Unique IPs by User",
+                                "text": "Filter Unique Users by IP",
                             },
-                            "value": "unique_ip_for_user",
+                            "value": "unique_user_for_ip",
                         },
                         {
                             "text": {"type": "plain_text", "text": "Date Range Search"},
