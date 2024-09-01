@@ -32,6 +32,7 @@ ES_API_KEY = os.getenv("ES_API_KEY")
 # )
 
 # Production Elasticsearch connection
+# TODO: Add SSL support and check in w/ Graham
 es_prod = AsyncElasticsearch(
     hosts=[
         {
@@ -41,7 +42,8 @@ es_prod = AsyncElasticsearch(
         }
     ],
     api_key=ES_API_KEY,
-    verify_certs=True,
+    verify_certs=False,
+    ssl_show_warn=False,
 )
 
 # Use es_prod for production, es_dev for development
