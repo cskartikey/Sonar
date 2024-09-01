@@ -2,7 +2,7 @@ import asyncio
 import json
 from math import ceil
 from typing import List, Dict, Any, Optional
-from config import appBot, ALLOWED_CHANNEL_ID
+from config import app, ALLOWED_CHANNEL_ID
 
 
 def create_field(text: str, value: str) -> Dict[str, str]:
@@ -179,7 +179,7 @@ async def fetch_all_channels():
     channels = []
     cursor = None
     while True:
-        response = await appBot.client.conversations_list(
+        response = await app.client.conversations_list(
             types="public_channel,private_channel", limit=1000, cursor=cursor
         )
         channels.extend(response.get("channels", []))
@@ -192,8 +192,8 @@ async def fetch_all_channels():
 
 async def remove_bot_from_channel(channel):
     try:
-        await appBot.client.conversations_leave(channel=channel["id"])
-        await appBot.client.chat_postMessage(
+        await app.client.conversations_leave(channel=channel["id"])
+        await app.client.chat_postMessage(
             channel=ALLOWED_CHANNEL_ID,
             text=f"🚨 The bot has been removed from a non-allowed channel (ID: {channel['id']}, Name: {channel.get('name')}, Creator: {channel.get('creator')}).",
         )
@@ -203,7 +203,7 @@ async def remove_bot_from_channel(channel):
 
 async def is_user_authorized(user_id: str) -> bool:
     try:
-        user_info = await appBot.client.users_info(user=user_id)
+        user_info = await app.client.users_info(user=user_id)
         return user_info["user"].get("is_admin", False) or user_info["user"].get(
             "is_owner", False
         )
@@ -215,7 +215,7 @@ async def is_user_authorized(user_id: str) -> bool:
 # TODO: Fix this function
 # async def report_bot_added(user_id: str, channel_id: str):
 #     try:
-#         await appBot.client.chat_postMessage(
+#         await app.client.chat_postMessage(
 #             channel=ALLOWED_CHANNEL_ID,
 #             text=f"🚨 The bot was added to an unauthorized channel (ID: {channel_id}) by <@{user_id}>."
 #         )

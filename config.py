@@ -2,6 +2,7 @@ import os
 from dotenv import load_dotenv
 from elasticsearch import AsyncElasticsearch
 from slack_bolt.async_app import AsyncApp
+from slack_sdk.web.async_client import AsyncWebClient
 
 load_dotenv()
 
@@ -9,6 +10,7 @@ ALLOWED_CHANNEL_ID = os.getenv("ALLOWED_CHANNEL_ID")
 SLACK_USER_TOKEN = os.getenv("SLACK_USER_TOKEN")
 SLACK_BOT_TOKEN = os.getenv("SLACK_BOT_TOKEN")
 SLACK_APP_TOKEN = os.getenv("SLACK_APP_TOKEN")
+SLACK_SIGNING_SECRET = os.getenv("SLACK_SIGNING_SECRET")
 
 ES_HOST = os.getenv("ES_HOST")
 ES_PORT = int(os.getenv("ES_PORT"))
@@ -49,5 +51,5 @@ es_prod = AsyncElasticsearch(
 # Use es_prod for production, es_dev for development
 es = es_prod
 
-app = AsyncApp(token=SLACK_USER_TOKEN)
-appBot = AsyncApp(token=SLACK_BOT_TOKEN)
+app = AsyncApp(token=SLACK_BOT_TOKEN, signing_secret=SLACK_SIGNING_SECRET)
+user_client = AsyncWebClient(token=SLACK_USER_TOKEN)
