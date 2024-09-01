@@ -18,7 +18,7 @@ ES_INDEX = os.getenv("ES_INDEX")
 ES_USER = os.getenv("ES_USER")
 ES_PASS = os.getenv("ES_PASS")
 ES_API_KEY = os.getenv("ES_API_KEY")
-PORT = os.getenv("PORT")
+PORT = int(os.getenv("PORT"))
 
 # Development Elasticsearch connection
 # es_dev = AsyncElasticsearch(
