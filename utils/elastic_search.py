@@ -1,7 +1,7 @@
 from config import ES_INDEX, es
 from typing import Dict, List, Tuple, Optional, Any
-import datetime
 import statistics
+from dateutil.parser import parse
 
 async def create_index() -> None:
     await es.options(ignore_status=[400]).indices.create(
@@ -217,8 +217,8 @@ def calculate_ip_overlap(user_details: List[Dict[str, Any]], other_user_details:
     return len(user_ips.intersection(other_user_ips)) / len(user_ips.union(other_user_ips))
 
 def calculate_time_proximity(user_details: List[Dict[str, Any]], other_user_details: List[Dict[str, Any]]) -> float:
-    user_timestamps = [datetime.fromisoformat(detail['_source']['date_last']) for detail in user_details]
-    other_user_timestamps = [datetime.fromisoformat(detail['_source']['date_last']) for detail in other_user_details]
+    user_timestamps = [parse(detail['_source']['date_last']) for detail in user_details]
+    other_user_timestamps = [parse(detail['_source']['date_last']) for detail in other_user_details]
     
     all_timestamps = sorted(user_timestamps + other_user_timestamps)
     time_diffs = [(all_timestamps[i+1] - all_timestamps[i]).total_seconds() for i in range(len(all_timestamps)-1)]
@@ -244,9 +244,9 @@ def calculate_frequency(details: List[Dict[str, Any]]) -> float:
     if not details:
         return 0
     
-    first_activity = min(datetime.fromisoformat(detail['_source']['date_first']) for detail in details)
-    last_activity = max(datetime.fromisoformat(detail['_source']['date_last']) for detail in details)
+    first_activity = min(parse(detail['_source']['date_first']) for detail in details)
+    last_activity = max(parse(detail['_source']['date_last']) for detail in details)
     total_logins = sum(detail['_source']['count'] for detail in details)
     
-    time_span = (last_activity - first_activity).total_seconds() / 86400  # Convert to days
+    time_span = (last_activity - first_activity).total_seconds() / 86400
     return total_logins / time_span if time_span > 0 else 0
