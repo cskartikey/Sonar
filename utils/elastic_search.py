@@ -2,6 +2,7 @@ from config import ES_INDEX, es
 from typing import Dict, List, Tuple, Optional, Any
 import statistics
 from dateutil.parser import parse
+import math
 
 async def create_index() -> None:
     await es.options(ignore_status=[400]).indices.create(
@@ -189,64 +190,120 @@ def summarize_activity(details: List[Dict[str, Any]]) -> Dict[str, Any]:
         "total_logins": total_logins
     }
 
-def calculate_alt_confidence(user_details: List[Dict[str, Any]], other_user_details: List[Dict[str, Any]]) -> float:
-    ip_overlap = calculate_ip_overlap(user_details, other_user_details)
-    time_proximity = calculate_time_proximity(user_details, other_user_details)
-    activity_pattern = calculate_activity_pattern(user_details, other_user_details)
-    login_frequency = calculate_login_frequency(user_details, other_user_details)
+def calculate_alt_confidence(user_details: List[Dict[str, Any]], other_user_details: List[Dict[str, Any]], weights: Dict[str, float] = None) -> float:
+    if not weights:
+        weights = {
+            'ip_overlap': 0.4,
+            'time_proximity': 0.3,
+            'activity_pattern': 0.2,
+            'login_frequency': 0.1
+        }
     
-    weights = {
-        'ip_overlap': 0.4,
-        'time_proximity': 0.3,
-        'activity_pattern': 0.2,
-        'login_frequency': 0.1
+    scores = {
+        'ip_overlap': calculate_ip_overlap(user_details, other_user_details),
+        'time_proximity': calculate_time_proximity(user_details, other_user_details),
+        'activity_pattern': calculate_activity_pattern(user_details, other_user_details),
+        'login_frequency': calculate_login_frequency(user_details, other_user_details),
+        'user_agent_similarity': calculate_user_agent_similarity(user_details, other_user_details)
     }
     
-    confidence = (
-        ip_overlap * weights['ip_overlap'] +
-        time_proximity * weights['time_proximity'] +
-        activity_pattern * weights['activity_pattern'] +
-        login_frequency * weights['login_frequency']
-    )
+    # Normalize scores
+    for key in scores:
+        scores[key] = max(0, min(scores[key], 1))
+    
+    # Calculate weighted sum
+    confidence = sum(scores[key] * weights.get(key, 0) for key in scores)
     
     return confidence
 
 def calculate_ip_overlap(user_details: List[Dict[str, Any]], other_user_details: List[Dict[str, Any]]) -> float:
-    user_ips = set(detail['_source']['ip'] for detail in user_details)
-    other_user_ips = set(detail['_source']['ip'] for detail in other_user_details)
-    return len(user_ips.intersection(other_user_ips)) / len(user_ips.union(other_user_ips))
+    try:
+        user_ips = set(detail['_source']['ip'] for detail in user_details if detail['_source'].get('ip'))
+        other_user_ips = set(detail['_source']['ip'] for detail in other_user_details if detail['_source'].get('ip'))
+        if not user_ips or not other_user_ips:
+            return 0
+        return len(user_ips.intersection(other_user_ips)) / len(user_ips.union(other_user_ips))
+    except Exception as e:
+        print(f"Error in calculate_ip_overlap: {e}")
+        return 0
 
 def calculate_time_proximity(user_details: List[Dict[str, Any]], other_user_details: List[Dict[str, Any]]) -> float:
-    user_timestamps = [parse(detail['_source']['date_last']) for detail in user_details]
-    other_user_timestamps = [parse(detail['_source']['date_last']) for detail in other_user_details]
-    
-    all_timestamps = sorted(user_timestamps + other_user_timestamps)
-    time_diffs = [(all_timestamps[i+1] - all_timestamps[i]).total_seconds() for i in range(len(all_timestamps)-1)]
-    avg_time_diff = sum(time_diffs) / len(time_diffs) if time_diffs else float('inf')
-    
-    return 1 / (1 + avg_time_diff / 3600)  # Normalize to [0, 1], closer to 1 for smaller time differences
+    try:
+        user_timestamps = [parse(detail['_source']['date_last']) for detail in user_details]
+        other_user_timestamps = [parse(detail['_source']['date_last']) for detail in other_user_details]
+        
+        all_timestamps = sorted(user_timestamps + other_user_timestamps)
+        time_diffs = [(all_timestamps[i+1] - all_timestamps[i]).total_seconds() for i in range(len(all_timestamps)-1)]
+        
+        if not time_diffs:
+            return 0
+        
+        avg_time_diff = sum(time_diffs) / len(time_diffs)
+        return math.exp(-avg_time_diff / (24 * 3600))  # Exponential decay, 1 day half-life
+    except Exception as e:
+        print(f"Error in calculate_time_proximity: {e}")
+        return 0
 
 def calculate_activity_pattern(user_details: List[Dict[str, Any]], other_user_details: List[Dict[str, Any]]) -> float:
-    user_activity = [detail['_source']['count'] for detail in user_details]
-    other_user_activity = [detail['_source']['count'] for detail in other_user_details]
-    
-    if user_activity and other_user_activity:
-        return 1 - abs(statistics.mean(user_activity) - statistics.mean(other_user_activity)) / max(statistics.mean(user_activity), statistics.mean(other_user_activity))
-    return 0
+    try:
+        user_activity = [detail['_source']['count'] for detail in user_details]
+        other_user_activity = [detail['_source']['count'] for detail in other_user_details]
+        
+        if not user_activity or not other_user_activity:
+            return 0
+        
+        user_mean = statistics.mean(user_activity)
+        other_user_mean = statistics.mean(other_user_activity)
+        
+        if user_mean == 0 and other_user_mean == 0:
+            return 1
+        elif user_mean == 0 or other_user_mean == 0:
+            return 0
+        
+        return 1 - abs(user_mean - other_user_mean) / max(user_mean, other_user_mean)
+    except Exception as e:
+        print(f"Error in calculate_activity_pattern: {e}")
+        return 0
 
 def calculate_login_frequency(user_details: List[Dict[str, Any]], other_user_details: List[Dict[str, Any]]) -> float:
-    user_frequency = calculate_frequency(user_details)
-    other_user_frequency = calculate_frequency(other_user_details)
-    
-    return 1 - abs(user_frequency - other_user_frequency) / max(user_frequency, other_user_frequency)
+    try:
+        user_frequency = calculate_frequency(user_details)
+        other_user_frequency = calculate_frequency(other_user_details)
+        
+        if user_frequency == 0 and other_user_frequency == 0:
+            return 1
+        elif user_frequency == 0 or other_user_frequency == 0:
+            return 0
+        
+        return 1 - abs(user_frequency - other_user_frequency) / max(user_frequency, other_user_frequency)
+    except Exception as e:
+        print(f"Error in calculate_login_frequency: {e}")
+        return 0
 
 def calculate_frequency(details: List[Dict[str, Any]]) -> float:
     if not details:
         return 0
     
-    first_activity = min(parse(detail['_source']['date_first']) for detail in details)
-    last_activity = max(parse(detail['_source']['date_last']) for detail in details)
-    total_logins = sum(detail['_source']['count'] for detail in details)
-    
-    time_span = (last_activity - first_activity).total_seconds() / 86400
-    return total_logins / time_span if time_span > 0 else 0
+    try:
+        first_activity = min(parse(detail['_source']['date_first']) for detail in details)
+        last_activity = max(parse(detail['_source']['date_last']) for detail in details)
+        total_logins = sum(detail['_source']['count'] for detail in details)
+        
+        time_span = (last_activity - first_activity).total_seconds() / 86400
+        return total_logins / time_span if time_span > 0 else 0
+    except Exception as e:
+        print(f"Error in calculate_frequency: {e}")
+        return 0
+
+def calculate_user_agent_similarity(user_details: List[Dict[str, Any]], other_user_details: List[Dict[str, Any]]) -> float:
+    try:
+        user_agents = set(detail['_source'].get('user_agent', '') for detail in user_details)
+        other_user_agents = set(detail['_source'].get('user_agent', '') for detail in other_user_details)
+        
+        if not user_agents or not other_user_agents:
+            return 0
+        
+        return len(user_agents.intersection(other_user_agents)) / len(user_agents.union(other_user_agents))
+    except Exception as e:
+        print(f"Error in calculate_user_agent_similarity: {e}")
+        return 0
