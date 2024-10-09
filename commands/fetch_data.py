@@ -61,6 +61,13 @@ async def fetch_data(
                             "text": {"type": "plain_text", "text": "Date Range Search"},
                             "value": "date_range",
                         },
+                        {
+                            "text": {
+                                "type": "plain_text",
+                                "text": "Find Potential Alts",
+                            },
+                            "value": "find_alts",
+                        },
                     ],
                 },
                 "label": {"type": "plain_text", "text": "Search Type"},
@@ -119,6 +126,18 @@ async def fetch_data(
                     "text": "*Note:* If you're conducting a Standard Search, you can fill in either the User ID or IP Address. "
                     "For other searches, the corresponding fields are required.",
                 },
+            },
+            {
+                "type": "input",
+                "block_id": "confidence_threshold",
+                "element": {
+                    "type": "number_input",
+                    "action_id": "confidence_input",
+                    "is_decimal_allowed": True,
+                    "min_value": "0",
+                    "max_value": "1",
+                },
+                "label": {"type": "plain_text", "text": "Confidence Threshold (0-1)"},
             },
         ],
         "submit": {"type": "plain_text", "text": "Search"},
