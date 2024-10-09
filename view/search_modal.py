@@ -56,25 +56,42 @@ async def handle_search(client: WebClient, ack, view):
         confidence_threshold = float(view["state"]["values"]["confidence_threshold"]["confidence_input"]["value"])
         potential_alts = await find_alts(search_params["user_id"], confidence_threshold)
         
-        blocks = [
-            {
-                "type": "section",
-                "text": {"type": "mrkdwn", "text": f"*Potential alternate accounts for <@{search_params['user_id']}>:*"},
-            },
-            {"type": "divider"},
-        ]
+        if not potential_alts:
+            await client.chat_postMessage(
+                channel=ALLOWED_CHANNEL_ID,
+                text=f"No potential alternate accounts found for user <@{search_params['user_id']}> with confidence threshold {confidence_threshold}.",
+            )
+            return
 
-        for alt in potential_alts:
-            blocks.append({
-                "type": "section",
-                "text": {"type": "mrkdwn", "text": f"• <@{alt['user_id']}>\n  Confidence: {alt['confidence']:.2f}\n  Shared IP: {alt['shared_ip']}"},
-            })
+        page_size = 10
+        total_pages = (len(potential_alts) + page_size - 1) // page_size
 
-        await client.chat_postMessage(
-            channel=ALLOWED_CHANNEL_ID,
-            blocks=blocks,
-            text=f"Found {len(potential_alts)} potential alternate accounts for user <@{search_params['user_id']}>.",
-        )
+        for page in range(1, total_pages + 1):
+            start_idx = (page - 1) * page_size
+            end_idx = min(start_idx + page_size, len(potential_alts))
+            page_alts = potential_alts[start_idx:end_idx]
+
+            blocks = [
+                {
+                    "type": "section",
+                    "text": {"type": "mrkdwn", "text": f"*Potential alternate accounts for <@{search_params['user_id']}> (Page {page}/{total_pages}):*"},
+                },
+                {"type": "divider"},
+            ]
+
+            for alt in page_alts:
+                blocks.append({
+                    "type": "section",
+                    "text": {"type": "mrkdwn", "text": f"• <@{alt['user_id']}>\n  Confidence: {alt['confidence']:.2f}\n  Shared IP: {alt['shared_ip']}"},
+                })
+
+            await client.chat_postMessage(
+                channel=ALLOWED_CHANNEL_ID,
+                blocks=blocks,
+                text=f"Found {len(potential_alts)} potential alternate accounts for user <@{search_params['user_id']}>. (Page {page}/{total_pages})",
+            )
+
+        return
     else:
         data, total = await standard_search(
             user_id=search_params["user_id"],
