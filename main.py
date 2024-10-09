@@ -8,11 +8,13 @@ from logs.data_fetcher import fetch_historical_data, fetch_incremental_data
 from utils.elastic_search import create_index
 from utils.slack_utils import check_bot_channel
 from view.search_modal import handle_search
+from commands.find_alts import find_alts_command
 
 app.command("/fetch_data")(fetch_data)
 app.action("load_more")(load_more)
 app.action("prev_page")(prev_page)
 app.view("search_modal")(handle_search)
+app.command("/find_alts")(find_alts_command)
 
 
 async def data_fetcher():
