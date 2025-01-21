@@ -15,8 +15,9 @@ SLACK_SIGNING_SECRET = os.getenv("SLACK_SIGNING_SECRET")
 ES_HOST = os.getenv("ES_HOST")
 ES_PORT = int(os.getenv("ES_PORT"))
 ES_INDEX = os.getenv("ES_INDEX")
-ES_USER = os.getenv("ES_USER")
-ES_PASS = os.getenv("ES_PASS")
+# Not used in PROD
+# ES_USER = os.getenv("ES_USER")
+# ES_PASS = os.getenv("ES_PASS")
 ES_API_KEY = os.getenv("ES_API_KEY")
 PORT = int(os.getenv("PORT"))
 

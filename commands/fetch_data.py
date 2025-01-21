@@ -4,30 +4,17 @@ from slack_bolt import Ack, BoltContext
 from slack_sdk import WebClient
 
 
-async def fetch_data(
-    client: WebClient, ack: Ack, body: Dict[str, Any], context: BoltContext
-) -> None:
-    await ack()
-
-    if not await is_user_authorized(body["user_id"]):
-        await client.chat_postEphemeral(
-            channel=body["channel_id"],
-            user=body["user_id"],
-            text="🚫 You don't have permission to perform this action.",
-        )
-        return
-
-    modal_view: Dict[str, Any] = {
+def get_search_modal_view() -> Dict[str, Any]:
+    return {
         "type": "modal",
         "callback_id": "search_modal",
-        "title": {"type": "plain_text", "text": "🧭 Sonar"},
+        "title": {"type": "plain_text", "text": "🔍 Search Data"},
         "blocks": [
             {
                 "type": "section",
                 "text": {
                     "type": "mrkdwn",
-                    "text": "👋 *Welcome to Sonar Search!* \nSelect a search type and provide the necessary details below. "
-                    "Please note that *your search will be logged* for auditing purposes.",
+                    "text": "👋 *Welcome to Sonar Search!*\nSelect a search type and provide the necessary details below.",
                 },
             },
             {"type": "divider"},
@@ -40,34 +27,23 @@ async def fetch_data(
                     "placeholder": {"type": "plain_text", "text": "Select Search Type"},
                     "options": [
                         {
-                            "text": {"type": "plain_text", "text": "Standard Search"},
+                            "text": {"type": "plain_text", "text": "🔍 Standard Search"},
                             "value": "standard_search",
                         },
                         {
                             "text": {
                                 "type": "plain_text",
-                                "text": "Find Unique IPs by User",
+                                "text": "👤 Find Unique IPs by User",
                             },
                             "value": "unique_ip_for_user",
                         },
                         {
                             "text": {
                                 "type": "plain_text",
-                                "text": "Filter Unique Users by IP",
+                                "text": "🌐 Filter Unique Users by IP",
                             },
                             "value": "unique_user_for_ip",
-                        },
-                        {
-                            "text": {"type": "plain_text", "text": "Date Range Search"},
-                            "value": "date_range",
-                        },
-                        {
-                            "text": {
-                                "type": "plain_text",
-                                "text": "Find Potential Alts",
-                            },
-                            "value": "find_alts",
-                        },
+                        }
                     ],
                 },
                 "label": {"type": "plain_text", "text": "Search Type"},
@@ -100,12 +76,9 @@ async def fetch_data(
                 "element": {
                     "type": "datepicker",
                     "action_id": "start_date",
-                    "placeholder": {
-                        "type": "plain_text",
-                        "text": "Select a start date",
-                    },
+                    "placeholder": {"type": "plain_text", "text": "Select start date"},
                 },
-                "label": {"type": "plain_text", "text": "Start Date"},
+                "label": {"type": "plain_text", "text": "Start Date (Optional)"},
                 "optional": True,
             },
             {
@@ -114,33 +87,36 @@ async def fetch_data(
                 "element": {
                     "type": "datepicker",
                     "action_id": "end_date",
-                    "placeholder": {"type": "plain_text", "text": "Select an end date"},
+                    "placeholder": {"type": "plain_text", "text": "Select end date"},
                 },
-                "label": {"type": "plain_text", "text": "End Date"},
+                "label": {"type": "plain_text", "text": "End Date (Optional)"},
                 "optional": True,
             },
             {
-                "type": "section",
-                "text": {
-                    "type": "mrkdwn",
-                    "text": "*Note:* If you're conducting a Standard Search, you can fill in either the User ID or IP Address. "
-                    "For other searches, the corresponding fields are required.",
-                },
-            },
-            {
-                "type": "input",
-                "block_id": "confidence_threshold",
-                "element": {
-                    "type": "number_input",
-                    "action_id": "confidence_input",
-                    "is_decimal_allowed": True,
-                    "min_value": "0",
-                    "max_value": "1",
-                },
-                "label": {"type": "plain_text", "text": "Confidence Threshold (0-1)"},
+                "type": "context",
+                "elements": [
+                    {
+                        "type": "mrkdwn",
+                        "text": "• For Standard Search: Fill in User ID or IP Address\n• For other searches: The corresponding field is required",
+                    }
+                ],
             },
         ],
         "submit": {"type": "plain_text", "text": "Search"},
     }
 
-    await client.views_open(trigger_id=body["trigger_id"], view=modal_view)
+
+async def fetch_data(
+    client: WebClient, ack: Ack, body: Dict[str, Any], context: BoltContext
+) -> None:
+    await ack()
+
+    if not await is_user_authorized(body["user_id"]):
+        await client.chat_postEphemeral(
+            channel=body["channel_id"],
+            user=body["user_id"],
+            text="🚫 You don't have permission to perform this action.",
+        )
+        return
+
+    await client.views_open(trigger_id=body["trigger_id"], view=get_search_modal_view())
