@@ -17,7 +17,7 @@ def create_fields(
 ) -> List[Dict[str, str]]:
     return [
         create_field(
-            f"#{index}. {label}" if i == 0 and include_index else label,
+            f"{index}. {label}" if i == 0 and include_index else label,
             source.get(key, "N/A"),
         )
         for i, (label, key) in enumerate(fields_list)

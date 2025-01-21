@@ -9,6 +9,7 @@ from actions.sonar_actions import handle_sonar_action
 from logs.data_fetcher import fetch_historical_data, fetch_incremental_data
 from utils.elastic_search import create_index
 # from utils.slack_utils import check_bot_channel
+from view.search_modal import handle_search
 
 app.command("/sonar")(handle_sonar)
 
@@ -18,6 +19,7 @@ app.action("load_more")(load_more)
 app.action("prev_page")(prev_page)
 # app.action("next_alt_page")(handle_alt_page)
 # app.action("prev_alt_page")(handle_alt_page)
+app.view("search_modal")(handle_search)
 
 
 async def data_fetcher():

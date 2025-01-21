@@ -1,6 +1,6 @@
 from config import ALLOWED_CHANNEL_ID
 from utils.slack_utils import format_slack_message
-from utils.elastic_search import standard_search, unique_user_search, unique_ip_search, find_alts
+from utils.elastic_search import standard_search, unique_user_search, unique_ip_search
 from slack_sdk import WebClient
 
 
