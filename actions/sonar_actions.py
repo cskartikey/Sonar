@@ -1,7 +1,7 @@
 from typing import Dict, Any
 from slack_sdk import WebClient
 from commands.fetch_data import get_search_modal_view
-from commands.find_alts import get_find_alts_modal_view
+# from commands.find_alts import get_find_alts_modal_view
 
 
 async def handle_sonar_action(client: WebClient, ack, body: Dict[str, Any]):
