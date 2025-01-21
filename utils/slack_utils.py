@@ -38,10 +38,31 @@ def format_slack_message(
 ) -> List[Dict[str, Any]]:
     blocks = []
 
-    if header_message:
-        blocks.append(
-            {"type": "header", "text": {"type": "plain_text", "text": header_message}}
-        )
+    search_details = []
+    if user_id:
+        search_details.append(f"User: <@{user_id}>")
+    if ip_address:
+        search_details.append(f"IP: {ip_address}")
+    if start_date and end_date:
+        search_details.append(f"Date Range: {start_date} to {end_date}")
+    
+    search_type_display = {
+        "standard_search": "Standard Search",
+        "unique_user_for_ip": "Unique Users for IP",
+        "unique_ip_for_user": "Unique IPs for User",
+        "date_range": "Date Range Search"
+    }.get(search_type, search_type)
+    
+    header_text = f"*{search_type_display}*"
+    if search_details:
+        header_text += f"\n{' | '.join(search_details)}"
+
+    blocks.append(
+        {
+            "type": "section",
+            "text": {"type": "mrkdwn", "text": header_text}
+        }
+    )
 
     if isinstance(data, dict) and "error" in data:
         blocks.append(
@@ -73,7 +94,7 @@ def format_slack_message(
     )
 
     field_mappings = {
-        "🔍 Standard Search Results": [
+        "standard_search": [
             ("User ID:", "user_id"),
             ("Username:", "username"),
             ("First Login:", "date_first"),
@@ -84,9 +105,19 @@ def format_slack_message(
             ("Country:", "country"),
             ("Region:", "region"),
         ],
-        "👤 Unique User IDs for IP": [("User ID:", "user_id")],
-        "🌐 Unique IPs for User ID": [("IP Address:", "ip")],
-        "🗓️ Date Range Search Results": [
+        "unique_user_for_ip": [
+            ("User ID:", "user_id"),
+            ("First Login:", "date_first"),
+            ("Last Login:", "date_last"),
+            ("Total Logins:", "count")
+        ],
+        "unique_ip_for_user": [
+            ("IP Address:", "ip"),
+            ("First Login:", "date_first"),
+            ("Last Login:", "date_last"),
+            ("Total Logins:", "count")
+        ],
+        "date_range": [
             ("User ID:", "user_id"),
             ("Username:", "username"),
             ("First Login:", "date_first"),
@@ -102,7 +133,7 @@ def format_slack_message(
     start_index = (page - 1) * size + 1
     for index, doc in enumerate(data, start=start_index):
         source = doc.get("_source", doc)
-        fields_list = field_mappings.get(header_message, [])
+        fields_list = field_mappings.get(search_type, field_mappings["standard_search"])
         fields = create_fields(index, source, fields_list)
         blocks.extend([{"type": "section", "fields": fields}, {"type": "divider"}])
 
@@ -111,14 +142,13 @@ def format_slack_message(
         buttons.append(
             {
                 "type": "button",
-                "text": {"type": "plain_text", "text": ":arrow_backward:"},
+                "text": {"type": "plain_text", "text": "Prev Page"},
                 "action_id": "prev_page",
                 "value": json.dumps(
                     {
                         "page": page - 1,
                         "user_id": user_id,
                         "ip_address": ip_address,
-                        "header_message": header_message,
                         "search_type": search_type,
                         "start_date": start_date,
                         "end_date": end_date,
@@ -130,14 +160,13 @@ def format_slack_message(
         buttons.append(
             {
                 "type": "button",
-                "text": {"type": "plain_text", "text": ":arrow_forward:"},
+                "text": {"type": "plain_text", "text": "Next Page"},
                 "action_id": "load_more",
                 "value": json.dumps(
                     {
                         "page": page + 1,
                         "user_id": user_id,
                         "ip_address": ip_address,
-                        "header_message": header_message,
                         "search_type": search_type,
                         "start_date": start_date,
                         "end_date": end_date,

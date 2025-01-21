@@ -55,12 +55,13 @@ async def handle_sonar(client: WebClient, ack: Ack, body: Dict[str, Any], contex
                     },
                 ],
             },
+            {"type": "divider"},
             {
                 "type": "context",
                 "elements": [
                     {
                         "type": "mrkdwn",
-                        "text": "• *Search Data*: Search through user activity and IP data\n• *Find Alt Accounts*: Analyze potential alternate accounts",
+                        "text": "⚠️ *Note:* All search actions are logged for audit purposes."
                     }
                 ],
             },

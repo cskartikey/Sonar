@@ -11,14 +11,6 @@ def get_search_modal_view() -> Dict[str, Any]:
         "title": {"type": "plain_text", "text": "🔍 Search Data"},
         "blocks": [
             {
-                "type": "section",
-                "text": {
-                    "type": "mrkdwn",
-                    "text": "👋 *Welcome to Sonar Search!*\nSelect a search type and provide the necessary details below.",
-                },
-            },
-            {"type": "divider"},
-            {
                 "type": "input",
                 "block_id": "search_type",
                 "element": {

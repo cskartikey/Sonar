@@ -22,7 +22,7 @@ async def load_more(
     end_date: str = metadata.get("end_date", "")
 
     try:
-        data, total, header_message = await get_search_results(
+        data, total = await get_search_results(
             search_type, user_id, ip_address, page, start_date, end_date
         )
 
@@ -31,7 +31,6 @@ async def load_more(
             total,
             page,
             size=10,
-            header_message=header_message,
             user_id=user_id,
             ip_address=ip_address,
             start_date=start_date,
@@ -45,18 +44,18 @@ async def load_more(
 
 async def get_search_results(
     search_type: str, user_id: str, ip_address: str, page: int, start_date: str, end_date: str
-) -> Tuple[List[Dict[str, Any]], int, str]:
+) -> Tuple[List[Dict[str, Any]], int]:
     if search_type == "standard_search":
         data, total = await standard_search(
-            user_id=user_id, ip_address=ip_address, page=page
+            user_id=user_id, ip_address=ip_address, page=page,
+            start_date=start_date, end_date=end_date
         )
-        header_message = "🔍 Standard Search Results"
     elif search_type == "unique_user_for_ip":
-        data, total = await unique_user_search(ip_address=ip_address, page=page)
-        header_message = "👤 Unique User IDs for IP"
+        data, total = await unique_user_search(ip_address=ip_address, page=page,
+            start_date=start_date, end_date=end_date)
     elif search_type == "unique_ip_for_user":
-        data, total = await unique_ip_search(user_id=user_id, page=page)
-        header_message = "🌐 Unique IPs for User ID"
+        data, total = await unique_ip_search(user_id=user_id, page=page,
+            start_date=start_date, end_date=end_date)
     elif search_type == "date_range":
         data, total = await standard_search(
             user_id=user_id,
@@ -65,8 +64,7 @@ async def get_search_results(
             end_date=end_date,
             page=page,
         )
-        header_message = "🗓️ Date Range Search Results"
     else:
         raise ValueError(f"Invalid search type: {search_type}")
 
-    return data, total, header_message
+    return data, total
