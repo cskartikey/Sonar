@@ -24,7 +24,7 @@ app.view("search_modal")(handle_search)
 
 async def data_fetcher():
     await create_index()
-    # historical_fetch_task = asyncio.create_task(fetch_historical_data())
+    historical_fetch_task = asyncio.create_task(fetch_historical_data())
     incremental_fetch_task = asyncio.create_task(fetch_incremental_data())
     await asyncio.gather(incremental_fetch_task)
 
